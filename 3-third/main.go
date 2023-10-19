@@ -18,7 +18,6 @@ const (
 
 // parseSite будет парсить указанный сайт и возвращать данные в виде слайса слайсов.
 func parseSite() ([][]string, error) {
-
 	resp, err := http.Get(siteURL)
 	if err != nil {
 		return nil, err
@@ -39,6 +38,9 @@ func parseSite() ([][]string, error) {
 			return sel.Text()
 		})
 		subscribers := row.Find("div.row-cell.subscribers").Text()
+		country := row.Find("div.row-cell.audience").Text()
+		authEngagement := row.Find("div.row-cell.authentic").Text()
+		avgEngagement := row.Find("div.row-cell.engagement").Text()
 
 		data = append(data, []string{
 			strings.TrimSpace(rank),
@@ -46,6 +48,9 @@ func parseSite() ([][]string, error) {
 			strings.TrimSpace(name),
 			strings.Join(categories, ", "),
 			strings.TrimSpace(subscribers),
+			strings.TrimSpace(country),
+			strings.TrimSpace(authEngagement),
+			strings.TrimSpace(avgEngagement),
 		})
 	})
 
@@ -71,7 +76,7 @@ func main() {
 	writer.Comma = ';'
 	defer writer.Flush()
 
-	writer.Write([]string{"Рейтинг", "Ник", "Имя", "Категория", "Подписчики"})
+	writer.Write([]string{"Рейтинг", "Ник", "Имя", "Категория", "Подписчики", "Страна", "Eng.(Auth.)", "Eng.(Avg.)"})
 
 	for _, row := range data {
 		writer.Write(row)

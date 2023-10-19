@@ -1,6 +1,6 @@
 go 1.20
 
 use (
-    ./second
-    ./third
+    ./2-second
+    ./3-third
 )

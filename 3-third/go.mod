@@ -1,4 +1,4 @@
-module github.com/SergeyMilch/test-one-plus/third
+module github.com/SergeyMilch/test-one-plus/3-third
 
 go 1.20
 
