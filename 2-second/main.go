@@ -10,7 +10,7 @@ import (
 
 const (
 	apiURL         = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1" // URL для получения данных о криптовалютах
-	updateInterval = 10 * time.Minute                                                                                           // Интервал обновления данных
+	updateInterval = 20 * time.Second                                                                                           // Интервал обновления данных
 )
 
 // Структура для хранения данных о криптовалюте
@@ -44,21 +44,32 @@ func fetchCurrencies() ([]Currency, error) {
 	return curr, nil
 }
 
+// Проверяем, нужно ли обновить данные
+func updateCurrenciesPeriodically() {
+	updateData()
+	for {
+		time.Sleep(updateInterval)
+		updateData()
+	}
+}
+
+// Функция для обновления данных
+func updateData() {
+	mux.Lock()
+	defer mux.Unlock()
+	var err error
+	currencies, err = fetchCurrencies()
+	if err != nil {
+		log.Printf("Ошибка при получении данных о криптовалютах: %v", err)
+	} else {
+		lastUpdated = time.Now()
+	}
+}
+
 // Обработчик для получения списка всех криптовалют
 func getCurrencies(w http.ResponseWriter, r *http.Request) {
 	mux.Lock()
 	defer mux.Unlock()
-
-	// Проверяем, нужно ли обновить данные
-	if time.Since(lastUpdated) > updateInterval {
-		var err error
-		currencies, err = fetchCurrencies()
-		if err != nil {
-			http.Error(w, "Ошибка при получении данных о криптовалютах", http.StatusInternalServerError)
-			return
-		}
-		lastUpdated = time.Now()
-	}
 
 	json.NewEncoder(w).Encode(currencies)
 }
@@ -82,6 +93,9 @@ func getCurrencyByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
+	go updateCurrenciesPeriodically()
+
 	// Регистрируем обработчики маршрутов
 	http.HandleFunc("/currencies", getCurrencies)
 	http.HandleFunc("/currency/", getCurrencyByID)
