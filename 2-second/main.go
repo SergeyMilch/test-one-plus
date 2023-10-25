@@ -10,7 +10,7 @@ import (
 
 const (
 	apiURL         = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1" // URL для получения данных о криптовалютах
-	updateInterval = 20 * time.Second                                                                                           // Интервал обновления данных
+	updateInterval = 10 * time.Minute                                                                                           // Интервал обновления данных
 )
 
 // Структура для хранения данных о криптовалюте
