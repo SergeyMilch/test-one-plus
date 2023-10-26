@@ -25,7 +25,7 @@ type Currency struct {
 var (
 	currencies  []Currency
 	lastUpdated time.Time
-	mux         sync.Mutex // Мьютекс для синхронизации доступа к данным
+	rwMux       sync.RWMutex // RWMutex для синхронизации доступа к данным
 )
 
 // Функция для получения данных о криптовалютах из API
@@ -55,8 +55,8 @@ func updateCurrenciesPeriodically() {
 
 // Функция для обновления данных
 func updateData() {
-	mux.Lock()
-	defer mux.Unlock()
+	rwMux.Lock()
+	defer rwMux.Unlock()
 	var err error
 	currencies, err = fetchCurrencies()
 	if err != nil {
@@ -68,22 +68,24 @@ func updateData() {
 
 // Обработчик для получения списка всех криптовалют
 func getCurrencies(w http.ResponseWriter, r *http.Request) {
-	mux.Lock()
-	defer mux.Unlock()
+	rwMux.RLock() // Только блокировка чтения
+	defer rwMux.RUnlock()
 
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(currencies)
 }
 
 // Обработчик для получения данных о конкретной криптовалюте
 func getCurrencyByID(w http.ResponseWriter, r *http.Request) {
-	mux.Lock()
-	defer mux.Unlock()
+	rwMux.RLock() // Только блокировка чтения
+	defer rwMux.RUnlock()
 
 	// Извлекаем ID из URL
 	id := r.URL.Path[len("/currency/"):]
 
 	for _, currency := range currencies {
 		if currency.ID == id {
+			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(currency)
 			return
 		}
@@ -101,5 +103,7 @@ func main() {
 	http.HandleFunc("/currency/", getCurrencyByID)
 
 	log.Println("Сервер запущен на порту :8080")
-	http.ListenAndServe(":8080", nil)
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatalf("Ошибка при запуске сервера: %v", err)
+	}
 }
